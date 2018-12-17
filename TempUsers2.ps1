@@ -3,11 +3,22 @@ Import-Module ActiveDirectory
 Search-ADAccount -SearchBase 'OU=GuestAccounts,OU=Guests,DC=domain-name,DC=nl' -AccountExpired | 
 Remove-ADUser -Confirm:$false
 
-$UserList = Get-ADuser -Filter * -SearchBase 'OU=GuestAccounts,OU=Guests,DC=domain-name,DC=nl'
-$UserList = $UserList | Sort-Object
-$FirstUser = 1
-$NextUser = 1
-$Proceed=$true
+$userList = Get-ADuser -Filter * -SearchBase 'OU=GuestAccounts,OU=Guests,DC=domain-name,DC=nl'
+$userList = $UserList | Sort-Object
+$firstUser = 1
+$nextUser = 1
+$proceed=$true
+$madeBy = Get-ADUser $env:userName -Properties GivenName, Surname
+$madeByLine = ($madeBy.GivenName  + " " +  $madeBy.Surname)
+
+do {
+   $requestedBy = Read-Host -Prompt "Wie heeft de gebruiker aangevraagd? voer de 4 letter afkorting in" 
+   $filterUser = Get-ADUser $requestedBy -Properties SamAccountName
+} until ($requestedBy.Length -eq  4 -and $filterUser.SamAccountName -eq $requestedBy)
+
+$requestName = Get-ADUser $requestedBy -Properties GivenName, Surname, mail
+$nameRequest = ($requestName.GivenName  + " " +  $requestName.Surname) 
+$requestMail = Get-ADUser $requestedBy -Properties mail | Select-Object -ExpandProperty mail
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -50,12 +61,12 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK)
 }
 
 foreach ($user in $userlist) {
-  $Numberstring = ($user.SAMaccountname).substring(5,2)
-  $Numberrstring
-  $Number = $Numberstring / 1
-  $Number
+  $numberString = ($user.SAMaccountname).substring(5,2)
+  $numberString
+  $number = $Numberstring / 1
+  $number
 
-  if (($Number -eq $NextUser) -and $Proceed) {
+  if (($number -eq $nextUser) -and $Proceed) {
      $NextUser ++
      }
   else {
@@ -64,12 +75,12 @@ foreach ($user in $userlist) {
   
 }
 
-$NextUser
-$NextString = $NextUser.ToString("00")
-$NextString
+$nextUser
+$nextString = $nextUser.ToString("00")
+$nextString
 
-$NewUser = "Guest-" + $NextString
-$NewUser
+$newUser = "Guest-" + $nextString
+$newUser
 
 
 function Get-RandomCharacters($length, $characters) {
@@ -88,6 +99,7 @@ New-ADUser `
 -AccountPassword (ConvertTo-SecureString "$password" -AsPlainText -Force) `
 -Path "OU=GuestAccounts,OU=Guests,DC=domain-name,DC=nl" `
 -AccountExpirationDate $($date.ToShortDateString()) `
+-StreetAddress "Account is made by $madeByLine          Account is requested by $nameRequest" `
 -Enabled 1 
 
 Add-ADGroupMember -Identity ScriptGast -Member "$NewUser"
@@ -105,4 +117,3 @@ $mail.Display()
 $mail.subject = “Credentials $NewUser“
 
 $mail.body = “ Username = $NewUser `n Password = $password `n Expirationedate =  $date“
-
