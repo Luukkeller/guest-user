@@ -12,7 +12,7 @@ $madeBy = Get-ADUser $env:userName -Properties GivenName, Surname
 $madeByLine = ($madeBy.GivenName  + " " +  $madeBy.Surname)
 
 do {
-   $requestedBy = Read-Host -Prompt "Wie heeft de gebruiker aangevraagd? voer de 4 letter afkorting in" 
+   $requestedBy = Read-Host -Prompt "Who requested the user? enter 4 letter username" 
    $filterUser = Get-ADUser $requestedBy -Properties SamAccountName
 } until ($requestedBy.Length -eq  4 -and $filterUser.SamAccountName -eq $requestedBy)
 
